@@ -123,13 +123,22 @@ class Aligning(object):
         else:
             default = self.get_current_values()
 
-        m = iminuit.Minuit(self, error_theta=0.1, error_phi=0.1, error_psi=0.1,
-                           error_dx=1, error_dy=1, error_dz=1, print_level=0, pedantic=False,
-                           errordef=self.errordef(),
-                           **default)
+        m = iminuit.Minuit(self, **default)
+
+        m.errors['theta'] = 0.1
+        m.errors['phi'] = 0.1
+        m.errors['psi'] = 0.1
+        m.errors['dx'] = 1
+        m.errors['dy'] = 1
+        m.errors['dz'] = 1
+
+        m.errordef = self.get_errordef()
+        m.print_level = 0
+
         m.migrad()
 
-        _values = m.values
+        _values = {name: m.values[name] for name in m.parameters}
+
         self._values = _values
         return _values, self.tmscore(**_values), self.rmsd(**_values)
 
@@ -307,7 +316,7 @@ class TMscoring(Aligning):
         return self._tm(theta, phi, psi, dx, dy, dz).sum()
 
     @staticmethod
-    def errordef():
+    def get_errordef():
         return 0.01
 
 
@@ -320,7 +329,7 @@ class Sscoring(Aligning):
         return self._s(theta, phi, psi, dx, dy, dz).sum()
 
     @staticmethod
-    def errordef():
+    def get_errordef():
         return 0.01
 
 
@@ -333,7 +342,7 @@ class RMSDscoring(Aligning):
         return self._rmsd(theta, phi, psi, dx, dy, dz).sum()
 
     @staticmethod
-    def errordef():
+    def get_errordef():
         return 0.05
 
 
